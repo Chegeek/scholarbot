@@ -1,0 +1,4 @@
+asyncio
+beautifulsoup4
+markovify
+requests
