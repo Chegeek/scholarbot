@@ -14,13 +14,15 @@ async def main():
     logging.basicConfig(level=logging.DEBUG)
 
     corpus = scrape()
-    print(len(corpus))
-    print(corpus[1])
+    assert(len(corpus) == 141)
+    corpustxt = '\n\n\n'.join(corpus)
+    with open('corpus.txt', 'w', encoding='utf-8') as file:
+        file.write(corpustxt)
 
 def scrape():
     # scrape corpus from apstudynotes
 
-    url = 'http://web.archive.org/web/20160207232714/www.apstudynotes.org/essays'
+    url = 'http://web.archive.org/web/20160207232714/www.apstudynotes.org/essays' # earliest snapshot from 2016
     # For some reason aiohttp does not work with web.archive.org, use requests instead
     html = requests.get(url).text
 
