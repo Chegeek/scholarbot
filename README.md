@@ -18,3 +18,11 @@ Requirements: Python 3 (latest), Git
 pip install -U requirements.txt
 python ./main.py
 ```
+
+---
+
+## Explanation
+
+The code uses a [Markov chain](https://en.wikipedia.org/wiki/Markov_chain) to generate random samples of the text. The implementation of the chain is provided by https://github.com/jsvine/markovify
+
+The corpus used for the model is 141 essays sourced from http://web.archive.org/web/20160207232714/www.apstudynotes.org/essays. Please note, running this program may be a legal gray area since these essays are normally under a paywall; I was able to obtain them by scraping an old version of apstudynotes.org that did not remove the paywalled text from the HTML.
