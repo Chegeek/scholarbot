@@ -3,6 +3,8 @@
 import asyncio
 import bs4
 import logging
+import markovify
+import os
 import requests
 from requests.exceptions import RequestException
 import traceback
@@ -13,6 +15,22 @@ log = logging.getLogger(__name__)
 async def main():
     logging.basicConfig(level=logging.DEBUG)
 
+    if not os.path.isfile('corpus.txt'):
+        make_corpus()
+
+    with open('corpus.txt', 'r', encoding='utf-8') as file:
+        corpustxt = file.read()
+
+    text_model = markovify.Text(corpustxt)
+    with open('sentences.txt', 'w', encoding='utf-8') as sents:
+        for i in range(100):
+            print(text_model.make_sentence(), file=sents)
+
+    with open('short_sentences.txt', 'w', encoding='utf-8') as short_sents:
+        for i in range(100):
+            print(text_model.make_short_sentence(140), file=short_sents)
+
+def make_corpus():
     corpus = scrape()
     assert(len(corpus) == 141)
     corpustxt = '\n\n\n'.join(corpus)
