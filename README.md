@@ -1,6 +1,6 @@
 # scholarbot
 
-Are you a high school student hoping to impress college admissions offices? Have no fear, ScholarBot is here! Simply run the program and it will say fancy things like
+Are you a high school student hoping to impress college admissions offices with a fancy essay? Have no fear, ScholarBot is here! Simply run the program and it will say fancy things like
 
 ```
 Trials were held closely by the unyielding razor of reality.
