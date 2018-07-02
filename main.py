@@ -22,7 +22,6 @@ def scrape():
 
     url = 'http://web.archive.org/web/20160207232714/www.apstudynotes.org/essays'
     # For some reason aiohttp does not work with web.archive.org, use requests instead
-    log.debug("GET %s", url)
     html = requests.get(url).text
 
     bs = bs4.BeautifulSoup(html, 'html.parser')
@@ -34,7 +33,6 @@ def scrape():
 
 def scrape_page(url):
     try:
-        log.debug("GET %s", url)
         html = requests.get(url).text
         bs = bs4.BeautifulSoup(html, 'html.parser')
         pattern = '.body p'
