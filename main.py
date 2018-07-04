@@ -33,7 +33,6 @@ async def main():
 
 async def make_corpus():
     corpus = await scrape()
-    assert(len(corpus) == 141)
     corpustxt = '\n\n\n'.join(corpus)
     with open('corpus.txt', 'w', encoding='utf-8') as file:
         file.write(corpustxt)
