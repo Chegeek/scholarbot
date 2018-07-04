@@ -7,6 +7,8 @@ import bs4
 from itertools import count
 import logging
 import markovify
+import math
+import numpy as np
 import os
 import requests
 from requests.exceptions import RequestException
@@ -88,9 +90,19 @@ async def scrape_page(sess, url):
             paras = bs.select(pattern)
             texts = [p.text for p in paras]
             return '\n\n'.join(texts)
-        except (ClientError, asyncio.TimeoutError):
+        except (ClientError, asyncio.TimeoutError) as e:
             traceback.print_exc()
+            if isinstance(e, asyncio.TimeoutError):
+                await random_delay()
             continue
+
+async def random_delay():
+    mean = 10
+    log_mean = math.log(mean, 2)
+    fuzz = np.random.standard_normal(size=1)[0]
+    value = int(np.ceil(2 ** (log_mean + fuzz)))
+    log.debug(f"Request timed out. Sleeping for {value}s...")
+    await asyncio.sleep(value)
 
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
