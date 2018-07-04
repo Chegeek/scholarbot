@@ -6068,14 +6068,6 @@ I almost made it out that night, but doubt ate away at my resolve as I packed a 
 I awoke to the golden light of dawn streaming into my bedroom onto a scene of unfathomable violence.
 Blood and drying viscera coated the walls in uneven splatters. The sharp copper tang in the air shook me like smelling salts to damnable clarity. The carpet was soaked and spotted with crimson, thick puddles of blood glistening in the morning sunlight.
 
-
-  window._taboola = window._taboola || [];
-  _taboola.push({
-    mode: 'thumbnails-b',
-    container: 'taboola-mobile-mid-article-thumbnails',
-    placement: 'Mobile Mid Article Thumbnails',
-    target_type: 'mix'
-  });
  
 In the far corner, where the walls were painted nearly black and the carpet invisible beneath a tiny lake of blood, was the body. The diminutive limbs were dark and smeared, stacked like cordwood; two slender arms and two legs, capped with a pair of small curled hands and two feet, so smeared in gore that I mistook them for shoes. Beside the little pile of spindly limbs was a child’s torso; momentarily I could not comprehend that this was part of the body, so surreal in its isolation and stillness.
 In the farthest corner at the apex of the slaughter was the broken television on a small table, the screen fully shattered to reveal a small interior space. Inside this hollow of plastic and metal, was a child’s head, balancing gracefully on its ragged neck, and faced away from me.
