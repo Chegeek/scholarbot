@@ -45,12 +45,12 @@ async def fetch(session, url):
 async def scrape():
     # scrape corpus from apstudynotes
 
-    url = 'https://www.apstudynotes.org/essays/'
+    url = 'http://www.creepypasta.org/creepypasta'
     async with aiohttp.ClientSession() as sess:
         html = await fetch(sess, url)
 
         bs = bs4.BeautifulSoup(html, 'html.parser')
-        pattern = '.entry .heading h3 a'
+        pattern = '.creepypasta-list a'
         anchors = bs.select(pattern)
         page_urls = [urljoin(url, a['href']) for a in anchors]
 
@@ -59,7 +59,7 @@ async def scrape():
 async def scrape_page(sess, url):
     html = await fetch(sess, url)
     bs = bs4.BeautifulSoup(html, 'html.parser')
-    pattern = '.body p'
+    pattern = '.entry-content p'
     paras = bs.select(pattern)
     texts = [p.text for p in paras]
     return '\n\n'.join(texts)
