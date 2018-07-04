@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import aiohttp
+from aiohttp.client_exceptions import ClientError
 import asyncio
 import bs4
 import logging
@@ -38,6 +39,7 @@ async def make_corpus():
         file.write(corpustxt)
 
 async def fetch(session, url):
+    log.debug(f"GET {url}")
     async with session.get(url) as response:
         return await response.text()
 
@@ -56,12 +58,16 @@ async def scrape():
         return await asyncio.gather(*[scrape_page(sess, pg) for pg in page_urls])
 
 async def scrape_page(sess, url):
-    html = await fetch(sess, url)
-    bs = bs4.BeautifulSoup(html, 'html.parser')
-    pattern = '.entry-content p'
-    paras = bs.select(pattern)
-    texts = [p.text for p in paras]
-    return '\n\n'.join(texts)
+    while True:
+        try:
+            html = await fetch(sess, url)
+            bs = bs4.BeautifulSoup(html, 'html.parser')
+            pattern = '.entry-content p'
+            paras = bs.select(pattern)
+            texts = [p.text for p in paras]
+            return '\n\n'.join(texts)
+        except ClientError:
+            continue
 
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
