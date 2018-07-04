@@ -86,15 +86,24 @@ async def scrape_page(sess, url):
         try:
             html = await fetch(sess, url)
             bs = bs4.BeautifulSoup(html, 'html.parser')
-            pattern = '.single-content p'
+            pattern = '.clearfix > p'
             paras = bs.select(pattern)
-            texts = [p.text for p in paras]
+            texts = [transform(p.text) for p in paras if filter(p.text)]
             return '\n\n'.join(texts)
         except (ClientError, asyncio.TimeoutError) as e:
             traceback.print_exc()
             if isinstance(e, asyncio.TimeoutError):
                 await random_delay()
             continue
+
+def filter(text):
+    text = text.strip()
+    if len(text) == 0 or text.startswith('[fvplayer') or text.startswith('CREDIT'):
+        return False
+    return True
+
+def transform(text):
+    return text.strip().replace('\xa0', ' ') # \xa0 is the char code for a nbsp
 
 async def random_delay():
     mean = 10
