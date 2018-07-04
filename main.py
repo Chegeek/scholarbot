@@ -37,6 +37,8 @@ async def main():
 
 async def make_corpus():
     corpus = await scrape()
+    with open('debug.txt', 'w', encoding='utf-8') as file:
+        file.write(repr(corpus))
     corpustxt = '\n\n\n'.join(corpus)
     with open('corpus.txt', 'w', encoding='utf-8') as file:
         file.write(corpustxt)
@@ -79,7 +81,9 @@ async def scrape():
 
     log.debug(f"len(page_urls): {len(page_urls)}")
     async with aiohttp.ClientSession() as sess:
-        return await asyncio.gather(*[scrape_page(sess, pg) for pg in page_urls])
+        result = await asyncio.gather(*[scrape_page(sess, pg) for pg in page_urls])
+        result = [story for story in result if len(story) > 0]
+        return result
 
 async def scrape_page(sess, url):
     while True:
@@ -89,7 +93,12 @@ async def scrape_page(sess, url):
             pattern = '.clearfix > p'
             paras = bs.select(pattern)
             texts = [transform(p.text) for p in paras if filter(p.text)]
-            return '\n\n'.join(texts)
+
+            if len(texts) == 0:
+                log.debug(f"Could not find text for {url}, skipping")
+                return ''
+            else:
+                return '\n\n'.join(texts)
         except (ClientError, asyncio.TimeoutError) as e:
             traceback.print_exc()
             if isinstance(e, asyncio.TimeoutError):
@@ -97,8 +106,8 @@ async def scrape_page(sess, url):
             continue
 
 def filter(text):
-    text = text.strip()
-    if len(text) == 0 or text.startswith('[fvplayer') or text.startswith('CREDIT'):
+    text = text.lower().strip()
+    if len(text) == 0 or text.startswith('[fvplayer') or text.startswith('credit'):
         return False
     return True
 
