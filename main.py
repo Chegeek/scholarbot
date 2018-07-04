@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import aiohttp
 import asyncio
 import bs4
 import logging
@@ -16,7 +17,7 @@ async def main():
     logging.basicConfig(level=logging.DEBUG)
 
     if not os.path.isfile('corpus.txt'):
-        make_corpus()
+        await make_corpus()
 
     with open('corpus.txt', 'r', encoding='utf-8') as file:
         corpustxt = file.read()
@@ -30,38 +31,38 @@ async def main():
         for i in range(100):
             print(text_model.make_short_sentence(140), file=short_sents)
 
-def make_corpus():
-    corpus = scrape()
+async def make_corpus():
+    corpus = await scrape()
     assert(len(corpus) == 141)
     corpustxt = '\n\n\n'.join(corpus)
     with open('corpus.txt', 'w', encoding='utf-8') as file:
         file.write(corpustxt)
 
-def scrape():
+async def fetch(session, url):
+    async with session.get(url) as response:
+        return await response.text()
+
+async def scrape():
     # scrape corpus from apstudynotes
 
-    url = 'http://web.archive.org/web/20160207232714/www.apstudynotes.org/essays' # earliest snapshot from 2016
-    # For some reason aiohttp does not work with web.archive.org, use requests instead
-    html = requests.get(url).text
+    url = 'https://www.apstudynotes.org/essays/'
+    async with aiohttp.ClientSession() as sess:
+        html = await fetch(sess, url)
 
-    bs = bs4.BeautifulSoup(html, 'html.parser')
-    pattern = '.entry .heading h3 a'
-    anchors = bs.select(pattern)
-    page_urls = [urljoin(url, a['href']) for a in anchors]
-
-    return [scrape_page(pg) for pg in page_urls]
-
-def scrape_page(url):
-    try:
-        html = requests.get(url).text
         bs = bs4.BeautifulSoup(html, 'html.parser')
-        pattern = '.body p'
-        paras = bs.select(pattern)
-        texts = [p.text for p in paras]
-        return '\n\n'.join(texts)
-    except RequestException:
-        traceback.print_exc()
-        return scrape_page(url)
+        pattern = '.entry .heading h3 a'
+        anchors = bs.select(pattern)
+        page_urls = [urljoin(url, a['href']) for a in anchors]
+
+        return await asyncio.gather(*[scrape_page(sess, pg) for pg in page_urls])
+
+async def scrape_page(sess, url):
+    html = await fetch(sess, url)
+    bs = bs4.BeautifulSoup(html, 'html.parser')
+    pattern = '.body p'
+    paras = bs.select(pattern)
+    texts = [p.text for p in paras]
+    return '\n\n'.join(texts)
 
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
