@@ -4,21 +4,22 @@ import aiohttp
 from aiohttp.client_exceptions import ClientError
 import asyncio
 import bs4
+from itertools import count
 import logging
 import markovify
 import os
 import requests
 from requests.exceptions import RequestException
+import sys
 import traceback
-from urllib.parse import urljoin
+from urllib.parse import urlencode, urljoin
 
 log = logging.getLogger(__name__)
 
 async def main():
     logging.basicConfig(level=logging.DEBUG)
 
-    if not os.path.isfile('corpus.txt'):
-        await make_corpus()
+    await make_corpus()
 
     with open('corpus.txt', 'r', encoding='utf-8') as file:
         corpustxt = file.read()
@@ -40,21 +41,42 @@ async def make_corpus():
 
 async def fetch(session, url):
     log.debug(f"GET {url}")
-    async with session.get(url) as response:
+    timeout = aiohttp.ClientTimeout(total=10)
+    async with session.get(url, timeout=timeout) as response:
         return await response.text()
 
 async def scrape():
     # scrape corpus from apstudynotes
 
-    url = 'http://www.creepypasta.org/creepypasta'
+    if os.path.exists('pageurls.txt'):
+        log.debug("Reading page_urls from pageurls.txt")
+        with open('pageurls.txt', 'r', encoding='utf-8') as file:
+            page_urls = file.read().strip().splitlines()
+    else:
+        log.debug("Collecting page_urls")
+        page_urls = []
+
+        async with aiohttp.ClientSession() as sess:
+            baseurl = 'https://www.creepypasta.com/pastas-indexed-category/'
+            for i in count(1, 1):
+                params = {f'lcp_page{j}': i for j in range(1, 8)}
+                url = f'{baseurl}?{urlencode(params)}'
+                html = await fetch(sess, url)
+
+                bs = bs4.BeautifulSoup(html, 'html.parser')
+                pattern = '.lcp_catlist li a'
+                anchors = bs.select(pattern)
+                if len(anchors) == 0:
+                    break
+
+                page_urls.extend([urljoin(url, a['href']) for a in anchors])
+
+        log.debug("Writing page_urls to pageurls.txt")
+        with open('pageurls.txt', 'w', encoding='utf-8') as file:
+            file.write('\n'.join(page_urls))
+
+    log.debug(f"len(page_urls): {len(page_urls)}")
     async with aiohttp.ClientSession() as sess:
-        html = await fetch(sess, url)
-
-        bs = bs4.BeautifulSoup(html, 'html.parser')
-        pattern = '.creepypasta-list a'
-        anchors = bs.select(pattern)
-        page_urls = [urljoin(url, a['href']) for a in anchors]
-
         return await asyncio.gather(*[scrape_page(sess, pg) for pg in page_urls])
 
 async def scrape_page(sess, url):
@@ -62,11 +84,12 @@ async def scrape_page(sess, url):
         try:
             html = await fetch(sess, url)
             bs = bs4.BeautifulSoup(html, 'html.parser')
-            pattern = '.entry-content p'
+            pattern = '.single-content p'
             paras = bs.select(pattern)
             texts = [p.text for p in paras]
             return '\n\n'.join(texts)
-        except ClientError:
+        except (ClientError, asyncio.TimeoutError):
+            traceback.print_exc()
             continue
 
 if __name__ == '__main__':
