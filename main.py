@@ -21,7 +21,8 @@ log = logging.getLogger(__name__)
 async def main():
     logging.basicConfig(level=logging.DEBUG)
 
-    await make_corpus()
+    if not os.path.exists('corpus.txt'):
+        await make_corpus()
 
     with open('corpus.txt', 'r', encoding='utf-8') as file:
         corpustxt = file.read()
