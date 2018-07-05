@@ -45,7 +45,7 @@ async def make_corpus():
         file.write(corpustxt)
 
 async def fetch(session, url):
-    log.debug(f"GET {url}")
+    log.debug("GET %s", url)
     timeout = aiohttp.ClientTimeout(total=10)
     async with session.get(url, timeout=timeout) as response:
         response.raise_for_status()
@@ -80,11 +80,14 @@ async def scrape():
         log.debug("Writing page_urls to pageurls.txt")
         with open('pageurls.txt', 'w', encoding='utf-8') as file:
             file.write('\n'.join(page_urls))
+    log.debug("len(page_urls): %s", len(page_urls))
 
-    log.debug(f"len(page_urls): {len(page_urls)}")
-    async with aiohttp.ClientSession() as sess:
+    conn = aiohttp.TCPConnector(limit_per_host=10)
+    async with aiohttp.ClientSession(connector=conn) as sess:
         result = await asyncio.gather(*[scrape_page(sess, pg) for pg in page_urls])
+        log.debug("len(result) [before]: %s", len(result))
         result = [story for story in result if len(story) > 0]
+        log.debug("len(result) [after]: %s", len(result))
         return result
 
 async def scrape_page(sess, url):
@@ -95,9 +98,8 @@ async def scrape_page(sess, url):
             pattern = '.clearfix > p'
             paras = bs.select(pattern)
             texts = [transform(p.text) for p in paras if filter(p.text)]
-            assert len(texts) > 0
             return '\n\n'.join(texts)
-        except (ClientError, asyncio.TimeoutError) as e:
+        except (ClientError, asyncio.TimeoutError):
             traceback.print_exc()
             await random_delay()
             continue
@@ -116,7 +118,7 @@ async def random_delay():
     log_mean = math.log(mean, 2)
     fuzz = np.random.standard_normal(size=1)[0]
     value = int(np.ceil(2 ** (log_mean + fuzz)))
-    log.debug(f"Sleeping for {value}s...")
+    log.debug("Sleeping for %ss...", value)
     await asyncio.sleep(value)
 
 if __name__ == '__main__':
