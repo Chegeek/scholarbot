@@ -22,27 +22,30 @@ async def main():
     logging.basicConfig(level=logging.DEBUG)
     
     if not os.path.exists('corpus.json'):
+        log.debug("corpus.json does not exist")
         urls_to_scrape = await get_page_urls()
     else:
+        log.debug("Loading data from corpus.json")
         dic = read_corpus_json()
         urls_to_scrape = urls_with_missing_data(dic)
+        log.debug("There are %s urls with missing data", len(urls_to_scrape))
 
     dic = await scrape(urls_to_scrape)
     write_corpus_json(dic)
 
     if len(urls_with_missing_data(dic)) > 0:
-        print(f"There are still {len(urls_with_missing_data(dic))} urls with missing data, exiting")
+        log.debug("There are still %s urls with missing data, exiting", len(urls_with_missing_data(dic)))
         sys.exit(0)
 
     write_corpus_txt(dic)
 
 async def get_page_urls():
     if os.path.exists('pageurls.txt'):
-        log.debug("Reading page_urls from pageurls.txt")
+        log.debug("Reading page urls from pageurls.txt")
         with open('pageurls.txt', 'r', encoding='utf-8') as file:
             page_urls = file.read().strip().splitlines()
     else:
-        log.debug("Collecting page_urls")
+        log.debug("Collecting page urls from the creepypasta website")
         page_urls = []
 
         async with aiohttp.ClientSession() as sess:
@@ -60,7 +63,7 @@ async def get_page_urls():
 
                 page_urls.extend([urljoin(url, a['href']) for a in anchors])
 
-        log.debug("Writing page_urls to pageurls.txt")
+        log.debug("Writing page urls to pageurls.txt")
         with open('pageurls.txt', 'w', encoding='utf-8') as file:
             file.write('\n'.join(page_urls))
 
