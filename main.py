@@ -75,12 +75,12 @@ def read_corpus_json():
 
 def write_corpus_json(dic):
     with open('corpus.json', 'w', encoding='utf-8') as file:
-        return json.dump(dic, file)
+        return json.dump(dic, file, indent=4, sort_keys=True)
 
 def write_corpus_txt(dic):
     # Sort by key, then extract the values
     pairs = dic.items().sorted(key=lambda t: t[0])
-    keys, values = zip(*pairs)
+    _, values = zip(*pairs)
     corpustxt = '\n\n\n'.join(values)
 
     with open('corpus.txt', 'w', encoding='utf-8') as file:
