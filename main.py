@@ -30,7 +30,7 @@ async def main():
         urls_to_scrape = urls_with_missing_data(dic)
         log.debug("There are %s urls with missing data", len(urls_to_scrape))
 
-    dic = await scrape(urls_to_scrape)
+    dic.update(await scrape(urls_to_scrape))
     write_corpus_json(dic)
 
     if len(urls_with_missing_data(dic)) > 0:
