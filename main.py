@@ -5,8 +5,8 @@ from aiohttp.client_exceptions import ClientError
 import asyncio
 import bs4
 from itertools import count
+import json
 import logging
-import markovify
 import math
 import numpy as np
 import os
@@ -20,40 +20,23 @@ log = logging.getLogger(__name__)
 
 async def main():
     logging.basicConfig(level=logging.DEBUG)
+    
+    if not os.path.exists('corpus.json'):
+        urls_to_scrape = await get_page_urls()
+    else:
+        dic = read_corpus_json()
+        urls_to_scrape = urls_with_missing_data(dic)
 
-    if not os.path.exists('corpus.txt'):
-        await make_corpus()
+    dic = await scrape(urls_to_scrape)
+    write_corpus_json(dic)
 
-    with open('corpus.txt', 'r', encoding='utf-8') as file:
-        corpustxt = file.read()
+    if len(urls_with_missing_data(dic)) > 0:
+        print(f"There are still {len(urls_with_missing_data(dic))} urls with missing data, exiting")
+        sys.exit(0)
 
-    text_model = markovify.Text(corpustxt)
-    with open('sentences.txt', 'w', encoding='utf-8') as sents:
-        for i in range(100):
-            print(text_model.make_sentence(), file=sents)
+    write_corpus_txt(dic)
 
-    with open('short_sentences.txt', 'w', encoding='utf-8') as short_sents:
-        for i in range(100):
-            print(text_model.make_short_sentence(140), file=short_sents)
-
-async def make_corpus():
-    corpus = await scrape()
-    with open('debug.txt', 'w', encoding='utf-8') as file:
-        file.write(repr(corpus))
-    corpustxt = '\n\n\n'.join(corpus)
-    with open('corpus.txt', 'w', encoding='utf-8') as file:
-        file.write(corpustxt)
-
-async def fetch(session, url):
-    log.debug("GET %s", url)
-    timeout = aiohttp.ClientTimeout(total=10)
-    async with session.get(url, timeout=timeout) as response:
-        response.raise_for_status()
-        return await response.text()
-
-async def scrape():
-    # scrape corpus from apstudynotes
-
+async def get_page_urls():
     if os.path.exists('pageurls.txt'):
         log.debug("Reading page_urls from pageurls.txt")
         with open('pageurls.txt', 'r', encoding='utf-8') as file:
@@ -80,15 +63,44 @@ async def scrape():
         log.debug("Writing page_urls to pageurls.txt")
         with open('pageurls.txt', 'w', encoding='utf-8') as file:
             file.write('\n'.join(page_urls))
-    log.debug("len(page_urls): %s", len(page_urls))
 
-    conn = aiohttp.TCPConnector(limit_per_host=10)
-    async with aiohttp.ClientSession(connector=conn) as sess:
-        result = await asyncio.gather(*[scrape_page(sess, pg) for pg in page_urls])
-        log.debug("len(result) [before]: %s", len(result))
-        result = [story for story in result if len(story) > 0]
-        log.debug("len(result) [after]: %s", len(result))
-        return result
+    log.debug("len(page_urls): %s", len(page_urls))
+    return page_urls
+
+def read_corpus_json():
+    assert os.path.exists('corpus.json')
+
+    with open('corpus.json', 'r', encoding='utf-8') as file:
+        return json.load(file)
+
+def write_corpus_json(dic):
+    with open('corpus.json', 'w', encoding='utf-8') as file:
+        return json.dump(dic, file)
+
+def write_corpus_txt(dic):
+    # Sort by key, then extract the values
+    pairs = dic.items().sorted(key=lambda t: t[0])
+    keys, values = zip(*pairs)
+    corpustxt = '\n\n\n'.join(values)
+
+    with open('corpus.txt', 'w', encoding='utf-8') as file:
+        file.write(corpustxt)
+
+def urls_with_missing_data(dic):
+    return [url for url, story in dic.items() if len(story) == 0]
+
+async def fetch(session, url):
+    log.debug("GET %s", url)
+    timeout = aiohttp.ClientTimeout(total=10)
+    async with session.get(url, timeout=timeout) as response:
+        # response.raise_for_status()
+        return await response.text()
+
+async def scrape(page_urls):
+    async with aiohttp.ClientSession() as sess:
+        lst = await asyncio.gather(*[scrape_page(sess, pg) for pg in page_urls])
+        dic = {url: story for url, story in zip(page_urls, lst)}
+        return dic
 
 async def scrape_page(sess, url):
     while True:
