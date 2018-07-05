@@ -99,9 +99,7 @@ async def scrape_page(sess, url):
             return '\n\n'.join(texts)
         except (ClientError, asyncio.TimeoutError) as e:
             traceback.print_exc()
-            if isinstance(e, asyncio.TimeoutError):
-                log.debug(f"Request to {url} timed out")
-                await random_delay()
+            await random_delay()
             continue
 
 def filter(text):
