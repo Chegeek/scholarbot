@@ -96,13 +96,15 @@ async def scrape_page(sess, url):
             texts = [transform(p.text) for p in paras if filter(p.text)]
 
             if len(texts) == 0:
-                log.debug(f"Could not find text for {url}, skipping")
-                return ''
+                log.debug(f"Did not find text for {url}")
+                await random_delay()
+                continue
             else:
                 return '\n\n'.join(texts)
         except (ClientError, asyncio.TimeoutError) as e:
             traceback.print_exc()
             if isinstance(e, asyncio.TimeoutError):
+                log.debug(f"Request to {url} timed out")
                 await random_delay()
             continue
 
@@ -120,7 +122,7 @@ async def random_delay():
     log_mean = math.log(mean, 2)
     fuzz = np.random.standard_normal(size=1)[0]
     value = int(np.ceil(2 ** (log_mean + fuzz)))
-    log.debug(f"Request timed out. Sleeping for {value}s...")
+    log.debug(f"Sleeping for {value}s...")
     await asyncio.sleep(value)
 
 if __name__ == '__main__':
