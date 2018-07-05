@@ -100,7 +100,8 @@ async def fetch(session, url):
         return await response.text()
 
 async def scrape(page_urls):
-    async with aiohttp.ClientSession() as sess:
+    conn = aiohttp.TCPConnector(limit_per_host=10)
+    async with aiohttp.ClientSession(connector=conn) as sess:
         lst = await asyncio.gather(*[scrape_page(sess, pg) for pg in page_urls])
         dic = {url: story for url, story in zip(page_urls, lst)}
         return dic
