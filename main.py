@@ -48,6 +48,7 @@ async def fetch(session, url):
     log.debug(f"GET {url}")
     timeout = aiohttp.ClientTimeout(total=10)
     async with session.get(url, timeout=timeout) as response:
+        response.raise_for_status()
         return await response.text()
 
 async def scrape():
@@ -94,13 +95,8 @@ async def scrape_page(sess, url):
             pattern = '.clearfix > p'
             paras = bs.select(pattern)
             texts = [transform(p.text) for p in paras if filter(p.text)]
-
-            if len(texts) == 0:
-                log.debug(f"Did not find text for {url}")
-                await random_delay()
-                continue
-            else:
-                return '\n\n'.join(texts)
+            assert len(texts) > 0
+            return '\n\n'.join(texts)
         except (ClientError, asyncio.TimeoutError) as e:
             traceback.print_exc()
             if isinstance(e, asyncio.TimeoutError):
