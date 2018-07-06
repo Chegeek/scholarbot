@@ -18,6 +18,18 @@ from urllib.parse import urlencode, urljoin
 
 log = logging.getLogger(__name__)
 
+# We don't include these 8 stories in the corpus because aiohttp has trouble downloading them
+blacklist = [
+    'https://www.creepypasta.com/apartment-701/',
+    'https://www.creepypasta.com/attention-all-shoppers/',
+    'https://www.creepypasta.com/crunched-paper-house/',
+    'https://www.creepypasta.com/he-comes/',
+    'https://www.creepypasta.com/laughing-jack/',
+    'https://www.creepypasta.com/subject-eighty-one/',
+    'https://www.creepypasta.com/the-killers-interview/',
+    'https://www.creepypasta.com/working-cemetery-unique-experience/'
+]
+
 async def main():
     logging.basicConfig(level=logging.DEBUG)
     
@@ -33,9 +45,10 @@ async def main():
     dic.update(await scrape(urls_to_scrape))
     write_corpus_json(dic)
 
-    if len(urls_with_missing_data(dic)) > 0:
-        log.debug("There are still %s urls with missing data, exiting", len(urls_with_missing_data(dic)))
-        sys.exit(0)
+    n_missing = len(urls_with_missing_data(dic))
+    if n_missing > 0:
+        log.debug("There are still %s urls with missing data, exiting", n_missing)
+        sys.exit(n_missing)
 
     write_corpus_txt(dic)
 
@@ -67,8 +80,9 @@ async def get_page_urls():
         with open('pageurls.txt', 'w', encoding='utf-8') as file:
             file.write('\n'.join(page_urls))
 
-    log.debug("len(page_urls): %s", len(page_urls))
-    return page_urls
+    # log.debug("len(page_urls): %s", len(page_urls))
+    setdiff = set(page_urls) - set(blacklist)
+    return list(setdiff)
 
 def read_corpus_json():
     assert os.path.exists('corpus.json')
