@@ -96,7 +96,7 @@ def write_corpus_json(dic):
 
 def write_corpus_txt(dic):
     # Sort by key, then extract the values
-    pairs = dic.items().sorted(key=lambda t: t[0])
+    pairs = sorted(dic.items(), key=lambda t: t[0])
     _, values = zip(*pairs)
     corpustxt = '\n\n\n'.join(values)
 
